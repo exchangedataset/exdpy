@@ -1,29 +1,7 @@
-from typing import Text, TypedDict
+from typing import Text, TypedDict, List, Optional
 
-from ._utils import REGEX_APIKEY
-
-APIKey = Text
-
-class _ClientSetting(TypedDict):
-    """Settings for :class:`Client`"""
-    apikey: APIKey
-    timeout: float
-
-def _setup_client_setting(apikey: Text, timeout: float) -> _ClientSetting:
-    if apikey is None:
-        raise TypeError('parameter "apikey" must be specified')
-    if not isinstance(apikey, str):
-        raise TypeError('parameter "apikey" must be an string')
-    if not REGEX_APIKEY.match(apikey):
-        raise ValueError('parameter "apikey" must be an valid API-key')
-    if not isinstance(timeout, float):
-        raise TypeError('parameter "apikey" must be an float')
-
-    return {
-        'apikey': apikey,
-        'timeout': timeout,
-    }
-
+from .common import _setup_client_setting, Filter, AnyDateTime
+from .raw import _RawRequestImpl, RawRequest
 from .http import HTTPModule
 
 class Client:
@@ -34,7 +12,7 @@ class Client:
         """Create :class:`Client` instance by given parameters.
         
         :param apikey: A string of API-key used to access HTTP Endpoint at the lower-level APIs.
-        :param timeout: Connection timeout in seconds.
+        :param timeout: Timeout in seconds.
         """
         self._setting = _setup_client_setting(apikey, timeout)
         self._http = HTTPModule(self._setting)
@@ -43,8 +21,8 @@ class Client:
     def http(self) -> HTTPModule:
         return self._http
 
-    # def raw(self) -> RawRequest:
-    #     pass
+    def raw(self, filter: Filter, start: AnyDateTime, end: AnyDateTime, formt: Optional[Text] = None) -> RawRequest:
+        return _RawRequestImpl(self._setting, filter, start, end, formt)
 
     # def replay(self) -> ReplayRequestBuilder:
     #     pass

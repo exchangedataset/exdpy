@@ -1,10 +1,58 @@
-from typing import Text, Union, Generic, NamedTuple, TypeVar, List, Optional, Mapping
+from typing import Text, Union, Generic, NamedTuple, TypeVar, List, Optional, Mapping, TypedDict
 from enum import Enum
 from datetime import datetime
+import re
+
+_REGEX_NAME = re.compile(r'^[a-zA-Z0-9_]+$')
+_REGEX_APIKEY = re.compile(r'^[A-Za-z0-9\-_]+$')
+
+APIKey = Text
+
+AnyDateTime = Union[int, Text, datetime]
+
+def _convert_any_date_time_to_nanosec(any_date_time: AnyDateTime) -> int:
+    if isinstance(any_date_time, int):
+        # already in nanosec
+        return any_date_time
+    elif isinstance(any_date_time, str):
+        # Z indicating UTC timezone is not supported by fromisoformat
+        # however, +00:00 is supported
+        any_date_time = any_date_time.replace('Z', '+00:00')
+        # convert it to datetime using iso format
+        any_date_time = datetime.fromisoformat(any_date_time)
+    
+    if isinstance(any_date_time, datetime):
+        timestamp = any_date_time.timestamp()
+        # split timestamp in seconds in float into seconds part and under seconds part
+        # this is to prevent precision issue
+        seconds = int(timestamp)
+        nanosecs = int((timestamp - seconds) * 1_000_000_000)
+
+        return seconds * 1_000_000_000 + nanosecs
+    else:
+        raise TypeError('type "%s" is not supported for AnyDateTime', type(any_date_time))
 
 AnyMinute = Union[int, Text, datetime]
-AnyDateTime = Union[int, Text, datetime]
-APIKey = Text
+
+def _convert_any_minute_to_minute(any_minute: AnyMinute) -> int:
+    if isinstance(any_minute, int):
+        # already in minute
+        return any_minute
+    elif isinstance(any_minute, str):
+        # convert it to datetime using iso format
+        any_minute = any_minute.replace('Z', '+00:00')
+        any_minute = datetime.fromisoformat(any_minute)
+
+    if isinstance(any_minute, datetime):
+        timestamp = any_minute.timestamp()
+
+        # convert seconds to minutes
+        return int(timestamp / 60)
+    else:
+        raise TypeError('type "%s" is not supported for AnyMinute', type(any_minute))
+
+def _convert_nanosec_to_minute(nanosec: int) -> int:
+    return nanosec // 60_000_000_000
 
 class LineType(Enum):
     """Enum of Line Type.
@@ -42,7 +90,7 @@ class LineType(Enum):
     """
     ERROR = 'err'
 
-LineTypeValueOf: Mapping[Text, LineType] = {
+_LineTypeValueOf: Mapping[Text, LineType] = {
     'msg': LineType.MESSAGE,
     'send': LineType.SEND,
     'start': LineType.START,
@@ -98,3 +146,36 @@ class TextLine(NamedTuple, Generic[T]):
     """
     message: Optional[Text]
 
+Filter = Mapping[Text, List[Text]]
+
+def _check_filter(filter: Filter):
+    for (exchange, channels) in filter.items():
+        if not isinstance(exchange, str):
+            raise TypeError('Name of exchange must be an string')
+        if not _REGEX_NAME.match(exchange):
+            raise ValueError('Name of exchange must be an valid string: %s' % exchange)
+        for ch in channels:
+            if not isinstance(ch, str):
+                raise TypeError('Name of channel must be an string')
+            if not _REGEX_NAME.match(ch):
+                raise ValueError('Name of channel must be an valid string: %s' % ch)
+
+class _ClientSetting(TypedDict):
+    """Settings for :class:`Client`"""
+    apikey: APIKey
+    timeout: float
+
+def _setup_client_setting(apikey: Text, timeout: float) -> _ClientSetting:
+    if apikey is None:
+        raise TypeError('parameter "apikey" must be specified')
+    if not isinstance(apikey, str):
+        raise TypeError('parameter "apikey" must be an string')
+    if not _REGEX_APIKEY.match(apikey):
+        raise ValueError('parameter "apikey" must be an valid API-key')
+    if not isinstance(timeout, float):
+        raise TypeError('parameter "apikey" must be an float')
+
+    return {
+        'apikey': apikey,
+        'timeout': timeout,
+    }

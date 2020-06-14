@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Text, Mapping, TypedDict, List, Generic, TypeVar, Union, NamedTuple, Optional, MutableMapping, Any
 from enum import Enum
 import requests
@@ -6,10 +5,8 @@ import gzip
 import json
 import re
 
-from .constants import CLIENT_DEFAULT_TIMEOUT
-from .common import AnyDateTime, AnyMinute, TextLine, LineType, LineTypeValueOf, APIKey
-from ._utils import REGEX_NAME, convert_any_date_time_to_nanosec, convert_any_minute_to_minute
-from .client import _ClientSetting, _setup_client_setting
+from .constants import URL_API, CLIENT_DEFAULT_TIMEOUT
+from .common import AnyDateTime, AnyMinute, TextLine, LineType, APIKey, _ClientSetting, _setup_client_setting, _LineTypeValueOf, _REGEX_NAME, _convert_any_date_time_to_nanosec, _convert_any_minute_to_minute
 
 def _download(client_setting: _ClientSetting, path: Text, params: Mapping[Text, Any]) -> Mapping:
     """Internal function to download from HTTP Endpoint.
@@ -18,7 +15,7 @@ def _download(client_setting: _ClientSetting, path: Text, params: Mapping[Text, 
     :param params: Query parameters.
     """
 
-    req = requests.get('https://api.exchangedataset.cc/v1/%s' % path,
+    req = requests.get(URL_API + path,
         params=params,
         headers={
             'Authorization': 'Bearer %s' % client_setting['apikey'],
@@ -65,23 +62,23 @@ def _download(client_setting: _ClientSetting, path: Text, params: Mapping[Text, 
 
 def _check_param_exchange(exchange: Text):
     if not isinstance(exchange, str):
-        raise TypeError('parameter "exchange" must be an string')
-    if not REGEX_NAME.match(exchange):
-        raise ValueError('parameter "exchange" must be of alphabets or numbers or hyphen')
+        raise TypeError('Parameter "exchange" must be a string')
+    if not _REGEX_NAME.match(exchange):
+        raise ValueError('Parameter "exchange" must be an valid string')
 
 def _check_param_channels(channels: List[Text]):
     if not isinstance(channels, list):
-        raise TypeError('parameter "channels" must be an list')
+        raise TypeError('Parameter "channels" must be an list')
     for ch in channels:
-        if not REGEX_NAME.match(ch):
-            raise ValueError('parameter "channels" must be an list of string of alphabets or numbers or hyphen: "%s"' % ch)
+        if not _REGEX_NAME.match(ch):
+            raise ValueError('Parameter "channels" must be an valid string: "%s"' % ch)
 
 def _filter(
     client_setting: _ClientSetting,
     exchange: Text,
     channels: List[Text],
     minute: AnyMinute,
-    format: Optional[Text],
+    formt: Optional[Text],
     start: Optional[AnyDateTime],
     end: Optional[AnyDateTime],
 ) -> List[TextLine]:
@@ -94,15 +91,26 @@ def _filter(
     params: MutableMapping[Text, Any] = {
         'channels': channels,
     }
-    if format is not None:
-        params['format'] = format
+    if formt is not None:
+        if not isinstance(formt, str):
+            raise TypeError('Parameter "format" must be a string')
+        if not _REGEX_NAME.match(formt):
+            raise ValueError('Parameter "format" must be an valid string')
+        params['format'] = formt
+    # convert anydatetime into nanosec in int
     if start is not None:
-        params['start'] = start
+        start_nanosec = _convert_any_date_time_to_nanosec(start)
+        params['start'] = start_nanosec
     if end is not None:
-        params['end'] = end
+        end_nanosec = _convert_any_date_time_to_nanosec(end)
+        params['end'] = end_nanosec
+    if start is not None and end is not None:
+        # check if start <= end
+        if params['start'] > params['end']:
+            raise ValueError('"start" cannot be equal to or bigger than "end"')
 
-    # convert any minute into minutes
-    minute_minute = convert_any_minute_to_minute(minute)
+    # convert any minute into minutes, this will type check "minute"
+    minute_minute = _convert_any_minute_to_minute(minute)
 
     # download from HTTP Endpoint
     res = _download(client_setting, 'filter/%s/%d' % (exchange, minute_minute), params)
@@ -123,10 +131,10 @@ def _filter(
         l = lines[i]
         lineTypeStr = l[:l.find('\t')]
 
-        if lineTypeStr not in LineTypeValueOf:
+        if lineTypeStr not in _LineTypeValueOf:
             raise RuntimeError('Unknown line type: %s' % lineTypeStr)
 
-        lineType = LineTypeValueOf[lineTypeStr]
+        lineType = _LineTypeValueOf[lineTypeStr]
 
         # exchange: Text
         ## type: LineType
@@ -138,7 +146,7 @@ def _filter(
             split = l.split('\t', 4)
             result[i] = TextLine(
                 exchange,
-                LineTypeValueOf[split[0]],
+                _LineTypeValueOf[split[0]],
                 int(split[1]),
                 split[2],
                 split[3],
@@ -147,7 +155,7 @@ def _filter(
             split = l.split('\t', 3)
             result[i] = TextLine(
                 exchange,
-                LineTypeValueOf[split[0]],
+                _LineTypeValueOf[split[0]],
                 int(split[1]),
                 split[2],
                 None,
@@ -156,7 +164,7 @@ def _filter(
             split = l.split('\t', 2)
             result[i] = TextLine(
                 exchange,
-                LineTypeValueOf[split[0]],
+                _LineTypeValueOf[split[0]],
                 int(split[1]),
                 None,
                 None,
@@ -175,7 +183,7 @@ def _snapshot(
     exchange: Text,
     channels: List[Text],
     at: AnyDateTime,
-    format: Optional[Text],
+    formt: Optional[Text],
 ) -> List[Snapshot]:
     """Internal function to call Snapshot HTTP Endpoint."""
     # check parameter type and value
@@ -186,11 +194,11 @@ def _snapshot(
     params: MutableMapping[Text, Union[Text, List[Text]]] = {
         'channels': channels,
     }
-    if format is not None:
-        params['format'] = format
+    if formt is not None:
+        params['format'] = formt
 
     # convert 'at' parameter into nanosec
-    at_nanosec = convert_any_date_time_to_nanosec(at)
+    at_nanosec = _convert_any_date_time_to_nanosec(at)
 
     # request to HTTP Endpoint
     res = _download(client_setting, 'snapshot/%s/%d' % (exchange, at_nanosec), params)
@@ -218,7 +226,7 @@ class HTTPModule:
         exchange: Text,
         channels: List[Text],
         minute: AnyMinute,
-        format: Optional[Text] = None,
+        formt: Optional[Text] = None,
         start: Optional[AnyDateTime] = None,
         end: Optional[AnyDateTime] = None,
     ) -> List[TextLine]:
@@ -227,48 +235,52 @@ class HTTPModule:
         :param exchange: Name of exchange.
         :param channels: List of name of channels.
         :param minute: Target minutes in UNIX time.
-        :param format: Name of format to get response in.
+        :param formt: Name of format to get response in.
         :param start: Minimum time including the time to filter-in lines in nano second UNIX time.
         :param end: Maximum time excluding the time to filter-in lines in nano second UNIX time.
         :returns: List of lines as an response.
         """
 
-        return _filter(self._client_setting, exchange, channels, minute, format, start, end)
+        return _filter(self._client_setting, exchange, channels, minute, formt, start, end)
 
     def snapshot(self,
         exchange: Text,
         channels: List[Text],
         at: AnyDateTime,
-        format: Text = None,
+        formt: Text = None,
     ) -> List[Snapshot]:
         """Sends a request to Snapshot HTTP Endpoint with given parameter synchronously.
         
-        :parameter 
+        :param exchange: Name of exchange to take snapshot of
+        :param channels: List of names of channels to take snapshot of
+        :param at: Target time to take snapshot at
+        :param formt: Format to get result in
+        :returns: List of snapshots
         """
-        return _snapshot(self._client_setting, exchange, channels, at, format)
+        return _snapshot(self._client_setting, exchange, channels, at, formt)
 
 def filter(
     apikey: APIKey,
     exchange: Text,
     channels: List[Text],
     minute: AnyMinute,
-    format: Optional[Text] = None,
+    formt: Optional[Text] = None,
     start: Optional[AnyDateTime] = None,
     end: Optional[AnyDateTime] = None,
     timeout: float = CLIENT_DEFAULT_TIMEOUT,
-):
+) -> List[TextLine]:
     """Sends a request to Filter HTTP Endpoint.
     See :class:`Client`.:func:`filter`.
 
     :param apikey: API-key used to connect HTTP Endpoint.
-    :param timeout: Optional. Connection timeout in seconds.
+    :param timeout: Optional. Timeout in seconds.
     """
     return _filter(
         _setup_client_setting(apikey, timeout),
         exchange,
         channels,
         minute,
-        format,
+        formt,
         start,
         end
     )
@@ -278,19 +290,19 @@ def snapshot(
     exchange: Text,
     channels: List[Text],
     at: AnyDateTime,
-    format: Optional[Text] = None,
+    formt: Optional[Text] = None,
     timeout: float = CLIENT_DEFAULT_TIMEOUT,
-):
+) -> List[Snapshot]:
     """Sends a request to Snapshot HTTP Endpoint.
     See :class:`Client`.:func:`snapshot`.
 
     :param apikey: API-key used to connect HTTP Endpoint.
-    :param timeout: Optional. Connection timeout in seconds.
+    :param timeout: Optional. Timeout in seconds.
     """
     return _snapshot(
         _setup_client_setting(apikey, timeout),
         exchange,
         channels,
         at,
-        format,
+        formt,
     )
