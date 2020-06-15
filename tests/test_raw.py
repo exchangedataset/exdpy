@@ -22,9 +22,10 @@ def test_raw_stream():
             'bitmex': ['orderBookL2']
         },
         '2020-01-01 00:00:00Z', 
-        '2020-01-01 01:00:00Z'
+        '2020-01-01 00:10:00Z'
     )
     ita = req.stream()
+    last_line: exdpy.TextLine = None
     count = 0
     for line in ita:
         assert type(line.exchange) == str
@@ -32,6 +33,9 @@ def test_raw_stream():
         assert type(line.timestamp) == int
         assert type(line.channel) == str
         assert type(line.message) == str
+        if last_line is not None:
+            assert last_line.timestamp <= line.timestamp
+        last_line = line
         count += 1
 
     assert count != 0

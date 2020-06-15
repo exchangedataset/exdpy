@@ -226,6 +226,12 @@ class _ExchangeStreamShardIterator(Iterator[Shard]):
         # receive error if stored
         try:
             sub_err = self._error_queue.get_nowait()
+            try:
+                proc.terminate()
+                proc.join()
+                self._close()
+            except:
+                pass
             raise RuntimeError(sub_err)
         except QueueEmptyError:
             pass
@@ -235,6 +241,18 @@ class _ExchangeStreamShardIterator(Iterator[Shard]):
         if self._next_download_minute <= self._end_minute:
             self._download_filter()
         return shard
+
+    def _close(self):
+        """terminate all child process"""
+        while len(self._queue) > 0:
+            proc, _ = self._queue.pop()
+            proc.terminate()
+            # prevent zombie process
+            proc.join()
+
+    def __del__(self):
+        """terminate all child processes if this instance is being garbadge collected"""
+        self._close()
 
 class _ExchangeStreamIterator(Iterator[TextLine]):
     def __init__(self,
