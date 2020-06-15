@@ -146,6 +146,8 @@ class TextLine(NamedTuple, Generic[T]):
     """
     message: Optional[Text]
 
+Shard = List[TextLine]
+
 Filter = Mapping[Text, List[Text]]
 
 def _check_filter(filter: Filter):

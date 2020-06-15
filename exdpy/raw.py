@@ -1,7 +1,10 @@
-from typing import Optional, List, Iterable, Text, Tuple, TypedDict, MutableMapping, Mapping, Iterator
-from multiprocessing import Pool
+from typing import Optional, List, Iterable, Text, Tuple, TypedDict, MutableMapping, Mapping, Iterator, Deque
+from multiprocessing import Pool, Process, Pipe, Queue
+from multiprocessing.connection import Connection
+from queue import Empty as QueueEmptyError
+from collections import deque
 
-from .common import TextLine, Filter, AnyDateTime, APIKey, LineType, _REGEX_NAME, _check_filter, _convert_any_date_time_to_nanosec, _convert_any_minute_to_minute, _ClientSetting, _setup_client_setting, _convert_nanosec_to_minute
+from .common import Shard, TextLine, Filter, AnyDateTime, APIKey, LineType, _REGEX_NAME, _check_filter, _convert_any_date_time_to_nanosec, _convert_any_minute_to_minute, _ClientSetting, _setup_client_setting, _convert_nanosec_to_minute
 from .constants import FILTER_DEFAULT_BUFFER_SIZE, DOWNLOAD_BATCH_SIZE
 from .http import _filter, _snapshot, Snapshot
 
@@ -30,7 +33,7 @@ class RawRequest:
 
     Iterator yields immidiately if a line is bufferred, waits for download if not available.
 
-    Downloading is multi-threaded and done concurrently.
+    Downloading is multi-processed and done concurrently.
 
     **Please note that buffering won't start by calling this function,**
     **calling :func:`__iter__` of a returned iterable will.**
@@ -41,8 +44,10 @@ class RawRequest:
     def stream(self, buffer_size: int = FILTER_DEFAULT_BUFFER_SIZE) -> Iterable[TextLine]:
         pass
 
+
+
 class _ShardsLineIterator(Iterator):
-    def __init__(self, shards: List[List[TextLine]]):
+    def __init__(self, shards: List[Shard]):
         self._shards = shards
         self._shard_pos = 0
         self._position = 0
@@ -59,7 +64,7 @@ class _ShardsLineIterator(Iterator):
         self._position += 1
         return line
 
-def _convert_snapshots_to_lines(exchange: Text, snapshots: List[Snapshot]) -> List[TextLine]:
+def _convert_snapshots_to_lines(exchange: Text, snapshots: List[Snapshot]) -> Shard:
     # exchange: Text
     ## type: LineType
     # timestamp: int
@@ -73,7 +78,7 @@ def _convert_snapshots_to_lines(exchange: Text, snapshots: List[Snapshot]) -> Li
         snapshot.snapshot,
     ), snapshots))
 
-def _runner_download_all_shards(params: Tuple):
+def _runner_download_shard(params: Tuple):
     op: Text = params[0]
     if op == 'snapshot':
         exchange = params[2]
@@ -84,7 +89,7 @@ def _runner_download_all_shards(params: Tuple):
         raise ValueError('Unknown operation: %s' % op)
 
 def _download_all_shards(client_setting: _ClientSetting, filt: Filter, start: int, end: int, formt: Optional[Text], concurrency: int) -> Mapping[Text, List[List[TextLine]]]:
-    # prepare parameters for multithread runners to fetch shards
+    # prepare parameters for multiprocess runners to fetch shards
     tasks: List[Tuple] = []
     for (exchange, channels) in filt.items():
         # take snapshot of channels at the begginging of data
@@ -98,16 +103,16 @@ def _download_all_shards(client_setting: _ClientSetting, filt: Filter, start: in
         for minute in range(start_minute, end_minute+1):
             tasks.append(('filter', client_setting, exchange, channels, minute, formt, start, end))
 
-    # download them in multithread way
+    # download them in multiprocess way
     pool = Pool(processes=concurrency)
     # sequence is preserved after mapping, this thread will be blocked until all tasks are done
     try:
-        mapped: List[List[TextLine]] = pool.map(_runner_download_all_shards, tasks)
+        mapped: List[Shard] = pool.map(_runner_download_shard, tasks)
     finally:
         # this ensures pool will stop all tasks even if any one of them generates error
         pool.terminate()
 
-    exc_shards: MutableMapping[Text, List[List[TextLine]]] = {}
+    exc_shards: MutableMapping[Text, List[Shard]] = {}
     for i in range(len(mapped)):
         exchange = tasks[i][2]
         if exchange not in exc_shards:
@@ -117,8 +122,267 @@ def _download_all_shards(client_setting: _ClientSetting, filt: Filter, start: in
 
     return exc_shards
 
+
+
+_IteratorAndLastLine = TypedDict('_IteratorAndLastLine', {'iterator': Iterator, 'last_line': TextLine})
+
+def _runner_exchange_iterator_download_shard(error_queue: Queue, pipe_send: Connection, op: Text, params: Tuple):
+    try:
+        if op == 'snapshot':
+            exchange = params[1]
+            shard = _convert_snapshots_to_lines(exchange, _snapshot(*params))
+        elif op == 'filter':
+            shard = _filter(*params)
+        else:
+            raise ValueError('Unknown operation: %s' % op)
+        # finally, send back shard through pipe
+        pipe_send.send(shard)
+    except Exception as e:
+        # report error
+        error_queue.put_nowait(e)
+        raise e
+
+class _ExchangeStreamShardIterator(Iterator[Shard]):
+    def __init__(self,
+        client_setting: _ClientSetting,
+        exchange: Text,
+        channels: List[Text],
+        start: int,
+        end: int,
+        formt: Optional[Text],
+        buffer_size: int,
+    ):
+        self._setting = client_setting
+        self._exchange = exchange
+        self._channels = channels
+        self._start = start
+        self._end = end
+        self._format = formt
+        # buffer
+        self._buffer: List[Optional[Shard]] = []
+        self._next_download_minute = start_minute = _convert_nanosec_to_minute(start)
+        # end is exclusive
+        self._end_minute = end_minute = _convert_nanosec_to_minute(end - 1)
+        # process management queue, tuple of process and pipe connection (receive only)
+        # used in fifo way
+        self._queue: Deque[Tuple[Process, Connection]] = deque(maxlen=buffer_size)
+        # to receive error from child process
+        self._error_queue: Queue = Queue()
+        # fill the buffer
+        self._download_snapshot()
+        for i in range(min(buffer_size - 1, end_minute - start_minute + 1)):
+            self._download_filter()
+
+    def _download_snapshot(self):
+        # creating pipe for 
+        pipe_recv, pipe_send = Pipe(duplex=False)
+        proc = Process(target=_runner_exchange_iterator_download_shard, args=(
+            self._error_queue,
+            pipe_send,
+            'snapshot',
+            (
+                self._setting,
+                self._exchange,
+                self._channels,
+                self._start,
+                self._format,
+            )
+        ))
+        # start new process
+        proc.start()
+        # add process and receive end of pipe into a query
+        self._queue.append((proc, pipe_recv))
+
+    def _download_filter(self):
+        pipe_recv, pipe_send = Pipe(duplex=False)
+        proc = Process(target=_runner_exchange_iterator_download_shard, args=(
+            self._error_queue,
+            pipe_send,
+            'filter',
+            (
+                self._setting,
+                self._exchange,
+                self._channels,
+                self._next_download_minute,
+                self._format,
+                self._start,
+                self._end,
+            )
+        ))
+        proc.start()
+        self._queue.append((proc, pipe_recv))
+        # increment minute
+        self._next_download_minute += 1
+
+    def __next__(self) -> Shard:
+        if len(self._queue) <= 0:
+            # no bufferred shard in queue
+            raise StopIteration
+
+        # pop from left, because fifo
+        proc, pipe_recv = self._queue.popleft()
+        # wait until receiving a shard from pipe
+        shard: Shard = pipe_recv.recv()
+        # receive error if stored
+        try:
+            sub_err = self._error_queue.get_nowait()
+            raise RuntimeError(sub_err)
+        except QueueEmptyError:
+            pass
+        # this will prevent child process from becoming a zombie process
+        proc.join()
+        # download next shard if it should
+        if self._next_download_minute <= self._end_minute:
+            self._download_filter()
+        return shard
+
+class _ExchangeStreamIterator(Iterator[TextLine]):
+    def __init__(self,
+        client_setting: _ClientSetting,
+        exchange: Text,
+        channels: List[Text],
+        start: int,
+        end: int,
+        formt: Optional[Text],
+        buffer_size: int,
+    ):
+        self._setting = client_setting
+        self._exchange = exchange
+        self._channels = channels
+        self._start = start
+        self._end = end
+        self._format = formt
+        self._buffer_size = buffer_size
+        # iterator and states
+        self._shard_iterator = _ExchangeStreamShardIterator(
+            client_setting,
+            exchange,
+            channels,
+            start,
+            end,
+            formt,
+            buffer_size,
+        )
+        self._shard: Optional[Shard] = None
+        self._position = 0
+
+    def __next__(self) -> TextLine:
+        if self._shard is None:
+            # get very first shard
+            try:
+                self._shard = next(self._shard_iterator)
+            except StopIteration:
+                # shard iterator empty
+                raise StopIteration
+        while len(self._shard) <= self._position:
+            try:
+                self._shard = next(self._shard_iterator)
+                self._position = 0
+            except:
+                # reached the last line
+                raise StopIteration
+        
+        # return the line
+        line = self._shard[self._position]
+        self._position += 1
+        return line
+
+class _RawStreamIterator(Iterator[TextLine]):
+    def __init__(self,
+        client_setting: _ClientSetting,
+        filt: Filter,
+        start: int,
+        end: int,
+        formt: Optional[Text],
+        buffer_size: int,
+    ):
+        self._setting = client_setting
+        # states
+        states: MutableMapping[Text, _IteratorAndLastLine] = {}
+        exchanges: List[Text] = []
+        for (exchange, channels) in filt.items():
+            iterator = _ExchangeStreamIterator(
+                client_setting,
+                exchange,
+                channels,
+                start,
+                end,
+                formt,
+                buffer_size,
+            )
+            try:
+                nxt = next(iterator)
+                states[exchange] = {
+                    'iterator': iterator,
+                    'last_line': nxt,
+                }
+                exchanges.append(exchange)
+            except StopIteration:
+                # ignore this exchange
+                pass
+        self._states: Mapping[Text, _IteratorAndLastLine] = states
+        self._exchanges: List[Text] = exchanges
+
+    def __next__(self) -> TextLine:
+        if (len(self._exchanges) == 0):
+            # all lines returned
+            raise StopIteration
+
+        # return the line that has the smallest timestamp of all shards of each exchange
+        argmin = len(self._exchanges) - 1
+        mi = self._states[self._exchanges[argmin]]['last_line'].timestamp
+        for i in range(0, len(self._exchanges) - 1):
+            last_line = self._states[self._exchanges[i]]['last_line']
+            if last_line.timestamp < mi:
+                argmin = i
+                min = last_line.timestamp
+        
+        exchange = self._exchanges[argmin]
+        state = self._states[exchange]
+        line = state['last_line']
+        try:
+            nxt = next(state['iterator'])
+            state['last_line'] = nxt
+        except StopIteration:
+            # remove from exchanges list
+            self._exchanges.remove(exchange)
+
+        return line
+
+class _RawStreamIterable(Iterable[TextLine]):
+    def __init__(self,
+        client_setting: _ClientSetting,
+        filt: Filter,
+        start: int,
+        end: int,
+        formt: Optional[Text],
+        buffer_size: int,
+    ):
+        self._setting = client_setting
+        self._filter = filt
+        self._start = start
+        self._end = end
+        self._format = formt
+        self._buffer_size = buffer_size
+
+    def __iter__(self) -> Iterator[TextLine]:
+        return _RawStreamIterator(
+            self._setting,
+            self._filter,
+            self._start,
+            self._end,
+            self._format,
+            self._buffer_size,
+        )
+
 class _RawRequestImpl(RawRequest):
-    def __init__(self, client_setting: _ClientSetting, filt: Filter, start: AnyDateTime, end: AnyDateTime, formt: Optional[Text]):
+    def __init__(self,
+        client_setting: _ClientSetting,
+        filt: Filter,
+        start: AnyDateTime,
+        end: AnyDateTime,
+        formt: Optional[Text]
+    ):
         self._setting = client_setting
         _check_filter(filt)
         self._filter = filt
@@ -135,8 +399,7 @@ class _RawRequestImpl(RawRequest):
         mapped = _download_all_shards(self._setting, self._filter, self._start, self._end, self._format, concurrency)
 
         # prepare shards line iterator for all exchange
-        IteratorAndLastLine = TypedDict('IteratorAndLastLine', {'iterator': _ShardsLineIterator, 'last_line': TextLine})
-        states: MutableMapping[Text, IteratorAndLastLine] = {}
+        states: MutableMapping[Text, _IteratorAndLastLine] = {}
         exchanges: List[Text] = []
         for (exchange, shards) in mapped.items():
             itr = _ShardsLineIterator(shards)
@@ -156,10 +419,8 @@ class _RawRequestImpl(RawRequest):
         while (len(exchanges) > 0):
             # have to set initial value to calculate minimum value
             argmin = len(exchanges) - 1
-            tmpLine = states[exchanges[argmin]]['last_line']
-            mi = tmpLine.timestamp
-            # must start from the end because it needs to remove its elements
-            for i in range(len(exchanges) - 2, 0, -1):
+            mi = states[exchanges[argmin]]['last_line'].timestamp
+            for i in range(0, len(exchanges) - 1):
                 exchange = exchanges[i]
                 line = states[exchange]['last_line']
                 if line.timestamp < mi:
@@ -180,7 +441,27 @@ class _RawRequestImpl(RawRequest):
         return array
 
     def stream(self, buffer_size: int = FILTER_DEFAULT_BUFFER_SIZE) -> Iterable[TextLine]:
-        pass
+        return _RawStreamIterable(
+            self._setting,
+            self._filter,
+            self._start,
+            self._end,
+            self._format,
+            buffer_size
+        )
 
-def raw(apikey: APIKey, timeout: float, filt: Filter, start: AnyDateTime, end: AnyDateTime, formt: Optional[Text] = None) -> RawRequest:
-    return _RawRequestImpl(_setup_client_setting(apikey, timeout), filt, start, end, formt)
+def raw(
+    apikey: APIKey,
+    timeout: float,
+    filt: Filter,
+    start: AnyDateTime,
+    end: AnyDateTime,
+    formt: Optional[Text] = None
+) -> RawRequest:
+    return _RawRequestImpl(
+        _setup_client_setting(apikey, timeout),
+        filt,
+        start,
+        end,
+        formt
+    )

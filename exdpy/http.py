@@ -6,7 +6,7 @@ import json
 import re
 
 from .constants import URL_API, CLIENT_DEFAULT_TIMEOUT
-from .common import AnyDateTime, AnyMinute, TextLine, LineType, APIKey, _ClientSetting, _setup_client_setting, _LineTypeValueOf, _REGEX_NAME, _convert_any_date_time_to_nanosec, _convert_any_minute_to_minute
+from .common import AnyDateTime, AnyMinute, Shard, TextLine, LineType, APIKey, _ClientSetting, _setup_client_setting, _LineTypeValueOf, _REGEX_NAME, _convert_any_date_time_to_nanosec, _convert_any_minute_to_minute
 
 def _download(client_setting: _ClientSetting, path: Text, params: Mapping[Text, Any]) -> Mapping:
     """Internal function to download from HTTP Endpoint.
@@ -81,7 +81,7 @@ def _filter(
     formt: Optional[Text],
     start: Optional[AnyDateTime],
     end: Optional[AnyDateTime],
-) -> List[TextLine]:
+) -> Shard:
     """Internal function to call Filter HTTP Endpoint."""
     # check parameters
     _check_param_exchange(exchange)
@@ -105,8 +105,8 @@ def _filter(
         end_nanosec = _convert_any_date_time_to_nanosec(end)
         params['end'] = end_nanosec
     if start is not None and end is not None:
-        # check if start <= end
-        if params['start'] > params['end']:
+        # check if start < end
+        if params['start'] >= params['end']:
             raise ValueError('"start" cannot be equal to or bigger than "end"')
 
     # convert any minute into minutes, this will type check "minute"
@@ -229,7 +229,7 @@ class HTTPModule:
         formt: Optional[Text] = None,
         start: Optional[AnyDateTime] = None,
         end: Optional[AnyDateTime] = None,
-    ) -> List[TextLine]:
+    ) -> Shard:
         """Sends a request to Filter HTTP Endpoint with given parameter synchronously.
 
         :param exchange: Name of exchange.
@@ -268,7 +268,7 @@ def filter(
     start: Optional[AnyDateTime] = None,
     end: Optional[AnyDateTime] = None,
     timeout: float = CLIENT_DEFAULT_TIMEOUT,
-) -> List[TextLine]:
+) -> Shard:
     """Sends a request to Filter HTTP Endpoint.
     See :class:`Client`.:func:`filter`.
 
