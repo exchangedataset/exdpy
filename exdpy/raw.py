@@ -4,9 +4,11 @@ from multiprocessing.connection import Connection
 from queue import Empty as QueueEmptyError
 from collections import deque
 
+from .constants import DEFAULT_BUFFER_SIZE, DOWNLOAD_BATCH_SIZE, CLIENT_DEFAULT_TIMEOUT
 from .common import Shard, TextLine, Filter, AnyDateTime, APIKey, LineType, _REGEX_NAME, _check_filter, _convert_any_date_time_to_nanosec, _convert_any_minute_to_minute, _ClientSetting, _setup_client_setting, _convert_nanosec_to_minute
-from .constants import FILTER_DEFAULT_BUFFER_SIZE, DOWNLOAD_BATCH_SIZE
 from .http import _filter, _snapshot, Snapshot
+
+
 
 class RawRequest:
     """Replays market data in raw format.
@@ -39,9 +41,9 @@ class RawRequest:
     **calling :func:`__iter__` of a returned iterable will.**
 
     :param buffer_size: Optional. Desired buffer size to store streaming data. One Shard is equivalent to one minute.
-    :returns: Instance of class implements `Iterable` from which iterator that yields response line by line from buffer can be obtained.
+    :returns: Instance of class implements :class:`Iterable` from which iterator that yields response line by line from buffer can be obtained.
     """
-    def stream(self, buffer_size: int = FILTER_DEFAULT_BUFFER_SIZE) -> Iterable[TextLine]:
+    def stream(self, buffer_size: int = DEFAULT_BUFFER_SIZE) -> Iterable[TextLine]:
         pass
 
 
@@ -137,7 +139,7 @@ def _runner_exchange_iterator_download_shard(error_queue: Queue, pipe_send: Conn
             raise ValueError('Unknown operation: %s' % op)
         # finally, send back shard through pipe
         pipe_send.send(shard)
-    except Exception as e:
+    except BaseException as e:
         # report error
         error_queue.put_nowait(e)
         raise e
@@ -406,6 +408,8 @@ class _RawRequestImpl(RawRequest):
         self._filter = filt
         self._start = _convert_any_date_time_to_nanosec(start)
         self._end = _convert_any_date_time_to_nanosec(end)
+        if self._start >= self._end:
+            raise ValueError('Parameter "start" cannot be equal or bigger than "end"')
         if formt is not None:
             if not isinstance(formt, str):
                 raise TypeError('Parameter "formt" must be a string')
@@ -458,7 +462,7 @@ class _RawRequestImpl(RawRequest):
         
         return array
 
-    def stream(self, buffer_size: int = FILTER_DEFAULT_BUFFER_SIZE) -> Iterable[TextLine]:
+    def stream(self, buffer_size: int = DEFAULT_BUFFER_SIZE) -> Iterable[TextLine]:
         return _RawStreamIterable(
             self._setting,
             self._filter,
@@ -470,11 +474,11 @@ class _RawRequestImpl(RawRequest):
 
 def raw(
     apikey: APIKey,
-    timeout: float,
     filt: Filter,
     start: AnyDateTime,
     end: AnyDateTime,
-    formt: Optional[Text] = None
+    formt: Optional[Text] = None,
+    timeout: float = CLIENT_DEFAULT_TIMEOUT,
 ) -> RawRequest:
     return _RawRequestImpl(
         _setup_client_setting(apikey, timeout),

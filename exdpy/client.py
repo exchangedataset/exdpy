@@ -2,8 +2,9 @@ from typing import Text, TypedDict, List, Optional
 
 from .constants import CLIENT_DEFAULT_TIMEOUT
 from .common import _setup_client_setting, Filter, AnyDateTime
-from .raw import _RawRequestImpl, RawRequest
 from .http import HTTPModule
+from .raw import _RawRequestImpl, RawRequest
+from .replay import _ReplayRequestImpl, ReplayRequest
 
 class Client:
     def __init__(self,
@@ -20,10 +21,13 @@ class Client:
 
     @property
     def http(self) -> HTTPModule:
+        """Low-level http call module"""
         return self._http
 
-    def raw(self, filter: Filter, start: AnyDateTime, end: AnyDateTime, formt: Optional[Text] = None) -> RawRequest:
-        return _RawRequestImpl(self._setting, filter, start, end, formt)
+    def raw(self, filt: Filter, start: AnyDateTime, end: AnyDateTime, formt: Optional[Text] = None) -> RawRequest:
+        """Lower-level API that processes data from Exchangedataset HTTP-API and generate raw (close to exchanges' format) data."""
+        return _RawRequestImpl(self._setting, filt, start, end, formt)
 
-    # def replay(self) -> ReplayRequestBuilder:
-    #     pass
+    def replay(self, filt: Filter, start: AnyDateTime, end: AnyDateTime) -> ReplayRequest:
+        """Returns builder to create :class:`ReplayRequest` that replays market data."""
+        return _ReplayRequestImpl(self._setting, filt, start, end)

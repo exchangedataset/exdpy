@@ -1,14 +1,14 @@
 import exdpy
 
 cli = exdpy.Client(apikey='demo')
-req = cli.raw({
-        'bitmex': ['orderBookL2']
+req = cli.replay({
+        'bitmex': ['orderBookL2_XBTUSD']
     },
-    '2020-01-01 00:00:00Z', 
+    '2020-01-01 00:00:00Z',
     '2020-01-01 00:10:00Z',
 )
 
-def test_raw_download():
+def test_replay_download():
     lines = req.download()
     assert len(lines) != 0
     for i in range(len(lines)):
@@ -16,9 +16,9 @@ def test_raw_download():
         assert type(lines[i].type) == exdpy.LineType
         assert type(lines[i].timestamp) == int
         assert type(lines[i].channel) == str
-        assert type(lines[i].message) == str
+        assert type(lines[i].message) == dict
     
-def test_raw_stream():
+def test_replay_stream():
     last_line: exdpy.TextLine = None
     count = 0
     for line in req.stream():
@@ -26,7 +26,7 @@ def test_raw_stream():
         assert type(line.type) == exdpy.LineType
         assert type(line.timestamp) == int
         assert type(line.channel) == str
-        assert type(line.message) == str
+        assert type(line.message) == dict
         if last_line is not None:
             assert last_line.timestamp <= line.timestamp
         last_line = line
@@ -34,3 +34,5 @@ def test_raw_stream():
 
     assert count != 0
     print('total of %d lines fetched', count)
+
+

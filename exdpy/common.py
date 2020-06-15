@@ -98,9 +98,15 @@ _LineTypeValueOf: Mapping[Text, LineType] = {
     'err': LineType.ERROR,
 }
 
-T = TypeVar('T')
+class MappingLine(NamedTuple):
+    """See :class:`TextLine`."""
+    exchange: Text
+    type: LineType
+    timestamp: int
+    channel: Optional[Text]
+    message: Optional[Mapping]
 
-class TextLine(NamedTuple, Generic[T]):
+class TextLine(NamedTuple):
     """Data structure of a single line from a response.
     
     `exchange`, `type` and `timestamp` is always present, **but `channel` or `message` is not.**
