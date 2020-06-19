@@ -55,7 +55,7 @@ class _ShardsLineIterator(Iterator):
         self._position = 0
 
     def __next__(self):
-        while (self._shard_pos < len(self._shards) and len(self._shards[self._shard_pos]) < self._position):
+        while (self._shard_pos < len(self._shards) and len(self._shards[self._shard_pos]) <= self._position):
             # this shard is all read
             self._shard_pos += 1
             self._position = 0
@@ -106,16 +106,13 @@ def _download_all_shards(client_setting: _ClientSetting, filt: Filter, start: in
             tasks.append(('filter', client_setting, exchange, channels, minute, formt, start, end))
 
     # download them in multiprocess way
-    pool = Pool(processes=concurrency)
-    # sequence is preserved after mapping, this thread will be blocked until all tasks are done
-    try:
+    # this ensures pool will stop all tasks even if any one of them generates error
+    with Pool(processes=concurrency) as pool:
+        # sequence is preserved after mapping, this thread will be blocked until all tasks are done
         mapped: List[Shard] = pool.map(_runner_download_shard, tasks)
-    finally:
-        # this ensures pool will stop all tasks even if any one of them generates error
-        pool.terminate()
 
     exc_shards: MutableMapping[Text, List[Shard]] = {}
-    for i in range(len(mapped)):
+    for i in range(len(tasks)):
         exchange = tasks[i][2]
         if exchange not in exc_shards:
             # initialize list for an exchange
@@ -349,9 +346,9 @@ class _RawStreamIterator(Iterator[TextLine]):
             raise StopIteration
 
         # return the line that has the smallest timestamp of all shards of each exchange
-        argmin = len(self._exchanges) - 1
+        argmin = 0
         mi = self._states[self._exchanges[argmin]]['last_line'].timestamp
-        for i in range(0, len(self._exchanges) - 1):
+        for i in range(1, len(self._exchanges)):
             last_line = self._states[self._exchanges[i]]['last_line']
             if last_line.timestamp < mi:
                 argmin = i
@@ -423,7 +420,7 @@ class _RawRequestImpl(RawRequest):
         # prepare shards line iterator for all exchange
         states: MutableMapping[Text, _IteratorAndLastLine] = {}
         exchanges: List[Text] = []
-        for (exchange, shards) in mapped.items():
+        for exchange, shards in mapped.items():
             itr = _ShardsLineIterator(shards)
             try:
                 nxt = next(itr)
@@ -438,11 +435,11 @@ class _RawRequestImpl(RawRequest):
 
         # it needs to process lines so that it becomes a single array
         array: List[TextLine] = []
-        while (len(exchanges) > 0):
+        while len(exchanges) > 0:
             # have to set initial value to calculate minimum value
-            argmin = len(exchanges) - 1
+            argmin = 0
             mi = states[exchanges[argmin]]['last_line'].timestamp
-            for i in range(0, len(exchanges) - 1):
+            for i in range(1, len(exchanges)):
                 exchange = exchanges[i]
                 line = states[exchange]['last_line']
                 if line.timestamp < mi:
