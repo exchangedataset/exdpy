@@ -1,4 +1,12 @@
+# IDE specific configs and caches
 /.vscode
+
+# Runtime Python caches
 /.mypy_cache
 /.pytest_cache
+/exchangedataset_python.egg-info
 __pycache__
+
+# Build files
+/dist
+/sphinx/_build
