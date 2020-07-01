@@ -15,7 +15,7 @@ URL = 'https://github.com/exchangedataset/exchangedataset-python'
 EMAIL = 'support@exchangedataset.cc'
 AUTHOR = 'Exchangedataset'
 REQUIRES_PYTHON = '>=3.8.0'
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -98,9 +98,9 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    # packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
+    packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
     # If your package is a single module, use this instead of 'packages':
-    py_modules=['exdpy'],
+    # py_modules=['exdpy'],
 
     # entry_points={
     #     'console_scripts': ['mycli=mymodule:cli'],

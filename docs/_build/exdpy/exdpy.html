@@ -1,0 +1,570 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>exdpy package &mdash; exchangedataset-python 1.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> exchangedataset-python
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">exdpy package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-exdpy.client">exdpy.client module</a></li>
+<li><a class="reference internal" href="#module-exdpy.common">exdpy.common module</a></li>
+<li><a class="reference internal" href="#module-exdpy.constants">exdpy.constants module</a></li>
+<li><a class="reference internal" href="#module-exdpy.http">exdpy.http module</a></li>
+<li><a class="reference internal" href="#module-exdpy.raw">exdpy.raw module</a></li>
+<li><a class="reference internal" href="#module-exdpy.replay">exdpy.replay module</a></li>
+<li><a class="reference internal" href="#module-exdpy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">exchangedataset-python</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>exdpy package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/_build/exdpy/exdpy.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="exdpy-package">
+<h1>exdpy package<a class="headerlink" href="#exdpy-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-exdpy.client">
+<span id="exdpy-client-module"></span><h2>exdpy.client module<a class="headerlink" href="#module-exdpy.client" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="exdpy.client.Client">
+<em class="property">class </em><code class="sig-prename descclassname">exdpy.client.</code><code class="sig-name descname">Client</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">apikey</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">30.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#exdpy.client.Client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="exdpy.client.Client.http">
+<em class="property">property </em><code class="sig-name descname">http</code><a class="headerlink" href="#exdpy.client.Client.http" title="Permalink to this definition">¶</a></dt>
+<dd><p>Low-level http call module</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="exdpy.client.Client.raw">
+<code class="sig-name descname">raw</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filt</span><span class="p">:</span> <span class="n">Mapping<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">start</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">end</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">formt</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="../../exdpy/exdpy.html#exdpy.raw.RawRequest" title="exdpy.raw.RawRequest">exdpy.raw.RawRequest</a><a class="headerlink" href="#exdpy.client.Client.raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lower-level API that processes data from Exchangedataset HTTP-API and generate raw (close to exchanges’ format) data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="exdpy.client.Client.replay">
+<code class="sig-name descname">replay</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filt</span><span class="p">:</span> <span class="n">Mapping<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">start</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">end</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="../../exdpy/exdpy.html#exdpy.replay.ReplayRequest" title="exdpy.replay.ReplayRequest">exdpy.replay.ReplayRequest</a><a class="headerlink" href="#exdpy.client.Client.replay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns builder to create <code class="xref py py-class docutils literal notranslate"><span class="pre">ReplayRequest</span></code> that replays market data.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-exdpy.common">
+<span id="exdpy-common-module"></span><h2>exdpy.common module<a class="headerlink" href="#module-exdpy.common" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="exdpy.common.LineType">
+<em class="property">class </em><code class="sig-prename descclassname">exdpy.common.</code><code class="sig-name descname">LineType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#exdpy.common.LineType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>Enum of Line Type.</p>
+<p>Line Type shows what type of a line is, such as message line or start line.</p>
+<p>Lines with different types contain different information and have to be treated accordingly.</p>
+<dl class="py attribute">
+<dt id="exdpy.common.LineType.END">
+<code class="sig-name descname">END</code><em class="property"> = 'end'</em><a class="headerlink" href="#exdpy.common.LineType.END" title="Permalink to this definition">¶</a></dt>
+<dd><p>Error Line Type</p>
+<p>Used when error occurrs on recording.</p>
+<p>Used in both server-side error and client-side (our client who receive WebSocket data) error.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.LineType.ERROR">
+<code class="sig-name descname">ERROR</code><em class="property"> = 'err'</em><a class="headerlink" href="#exdpy.common.LineType.ERROR" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.LineType.MESSAGE">
+<code class="sig-name descname">MESSAGE</code><em class="property"> = 'msg'</em><a class="headerlink" href="#exdpy.common.LineType.MESSAGE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send Line Type.</p>
+<p>Message send from one of our client when recording.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.LineType.SEND">
+<code class="sig-name descname">SEND</code><em class="property"> = 'send'</em><a class="headerlink" href="#exdpy.common.LineType.SEND" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start Line Type</p>
+<p>Indicates the first line in the continuous recording.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.LineType.START">
+<code class="sig-name descname">START</code><em class="property"> = 'start'</em><a class="headerlink" href="#exdpy.common.LineType.START" title="Permalink to this definition">¶</a></dt>
+<dd><p>End Line Type.</p>
+<p>Indicates the end line in the continuous recording.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="exdpy.common.MappingLine">
+<em class="property">class </em><code class="sig-prename descclassname">exdpy.common.</code><code class="sig-name descname">MappingLine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">exchange</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">type</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.LineType" title="exdpy.common.LineType">exdpy.common.LineType</a></span></em>, <em class="sig-param"><span class="n">timestamp</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">channel</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">message</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Mapping<span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#exdpy.common.MappingLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>See <a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.TextLine" title="exdpy.common.TextLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">TextLine</span></code></a>.</p>
+<dl class="py attribute">
+<dt id="exdpy.common.MappingLine.channel">
+<code class="sig-name descname">channel</code><em class="property">: Optional<span class="p">[</span>str<span class="p">]</span></em><a class="headerlink" href="#exdpy.common.MappingLine.channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.MappingLine.exchange">
+<code class="sig-name descname">exchange</code><em class="property">: str</em><a class="headerlink" href="#exdpy.common.MappingLine.exchange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.MappingLine.message">
+<code class="sig-name descname">message</code><em class="property">: Optional<span class="p">[</span>Mapping<span class="p">]</span></em><a class="headerlink" href="#exdpy.common.MappingLine.message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.MappingLine.timestamp">
+<code class="sig-name descname">timestamp</code><em class="property">: int</em><a class="headerlink" href="#exdpy.common.MappingLine.timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.MappingLine.type">
+<code class="sig-name descname">type</code><em class="property">: <a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.LineType" title="exdpy.common.LineType">exdpy.common.LineType</a></em><a class="headerlink" href="#exdpy.common.MappingLine.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="exdpy.common.TextLine">
+<em class="property">class </em><code class="sig-prename descclassname">exdpy.common.</code><code class="sig-name descname">TextLine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">exchange</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">type</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.LineType" title="exdpy.common.LineType">exdpy.common.LineType</a></span></em>, <em class="sig-param"><span class="n">timestamp</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">channel</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">message</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#exdpy.common.TextLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>Data structure of a single line from a response.</p>
+<p><cite>exchange</cite>, <cite>type</cite> and <cite>timestamp</cite> is always present, <strong>but `channel` or `message` is not.</strong>
+This is because with certain <cite>type</cite>, a line might not contain <cite>channel</cite> or <cite>message</cite>, or both.</p>
+<dl class="py attribute">
+<dt id="exdpy.common.TextLine.channel">
+<code class="sig-name descname">channel</code><em class="property">: Optional<span class="p">[</span>str<span class="p">]</span></em><a class="headerlink" href="#exdpy.common.TextLine.channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Message.
+Could be <cite>None</cite> accoring to <cite>type</cite>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.TextLine.exchange">
+<code class="sig-name descname">exchange</code><em class="property">: str</em><a class="headerlink" href="#exdpy.common.TextLine.exchange" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <cite>type === LineType.MESSAGE</cite>, then a line is a normal message.
+All of value are present.
+You can get an assosiated channel by <cite>channel</cite>, and its message by <cite>message</cite>.</p>
+<p>If <cite>type === LineType.SEND</cite>, then a line is a request server sent when the dataset was
+recorded.
+All of value are present, though you can ignore this line.</p>
+<p>If <cite>type === LineType.START</cite>, then a line marks the start of new continuous recording of the
+dataset.
+Only <cite>channel</cite> is not present. <cite>message</cite> is the URL which used to record the dataset.
+You might want to initialize your work since this essentially means new connection to
+exchange’s API.</p>
+<p>If <cite>type === LineType.END</cite>, then a line marks the end of continuous recording of the dataset.
+Other than <cite>type</cite> and <cite>timestamp</cite> are not present.
+You might want to perform some functionality when the connection to exchange’s API was lost.</p>
+<p>If <cite>type === LineType.ERROR</cite>, then a line contains error message when recording the dataset.
+Only <cite>channel</cite> is not present. <cite>message</cite> is the error message.
+You want to ignore this line.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.TextLine.message">
+<code class="sig-name descname">message</code><em class="property">: Optional<span class="p">[</span>str<span class="p">]</span></em><a class="headerlink" href="#exdpy.common.TextLine.message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.TextLine.timestamp">
+<code class="sig-name descname">timestamp</code><em class="property">: int</em><a class="headerlink" href="#exdpy.common.TextLine.timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Channel name which this line is associated with.
+Could be <cite>None</cite> according to <cite>type</cite>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.common.TextLine.type">
+<code class="sig-name descname">type</code><em class="property">: <a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.LineType" title="exdpy.common.LineType">exdpy.common.LineType</a></em><a class="headerlink" href="#exdpy.common.TextLine.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Timestamp in nano seconds of this line was recorded.</p>
+<p>Timestamp is in unixtime-compatible format (unixtime * 10^9 + nanosec-part).
+Timezone is UTC.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-exdpy.constants">
+<span id="exdpy-constants-module"></span><h2>exdpy.constants module<a class="headerlink" href="#module-exdpy.constants" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-exdpy.http">
+<span id="exdpy-http-module"></span><h2>exdpy.http module<a class="headerlink" href="#module-exdpy.http" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="exdpy.http.HTTPModule">
+<em class="property">class </em><code class="sig-prename descclassname">exdpy.http.</code><code class="sig-name descname">HTTPModule</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client_setting</span><span class="p">:</span> <span class="n">exdpy.common._ClientSetting</span></em><span class="sig-paren">)</span><a class="headerlink" href="#exdpy.http.HTTPModule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="exdpy.http.HTTPModule.filter">
+<code class="sig-name descname">filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">exchange</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">channels</span><span class="p">:</span> <span class="n">List<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">minute</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">formt</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">start</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">end</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.TextLine" title="exdpy.common.TextLine">exdpy.common.TextLine</a><span class="p">]</span><a class="headerlink" href="#exdpy.http.HTTPModule.filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a request to Filter HTTP Endpoint with given parameter synchronously.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exchange</strong> – Name of exchange.</p></li>
+<li><p><strong>channels</strong> – List of name of channels.</p></li>
+<li><p><strong>minute</strong> – Target minutes in UNIX time.</p></li>
+<li><p><strong>formt</strong> – Name of format to get response in.</p></li>
+<li><p><strong>start</strong> – Minimum time including the time to filter-in lines in nano second UNIX time.</p></li>
+<li><p><strong>end</strong> – Maximum time excluding the time to filter-in lines in nano second UNIX time.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of lines as an response.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="exdpy.http.HTTPModule.snapshot">
+<code class="sig-name descname">snapshot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">exchange</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">channels</span><span class="p">:</span> <span class="n">List<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">at</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">formt</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="../../exdpy/exdpy.html#exdpy.http.Snapshot" title="exdpy.http.Snapshot">exdpy.http.Snapshot</a><span class="p">]</span><a class="headerlink" href="#exdpy.http.HTTPModule.snapshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a request to Snapshot HTTP Endpoint with given parameter synchronously.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exchange</strong> – Name of exchange to take snapshot of</p></li>
+<li><p><strong>channels</strong> – List of names of channels to take snapshot of</p></li>
+<li><p><strong>at</strong> – Target time to take snapshot at</p></li>
+<li><p><strong>formt</strong> – Format to get result in</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of snapshots</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="exdpy.http.Snapshot">
+<em class="property">class </em><code class="sig-prename descclassname">exdpy.http.</code><code class="sig-name descname">Snapshot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">channel</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">snapshot</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#exdpy.http.Snapshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>This dict holds a line from Snapshot HTTP Endpoint.</p>
+<dl class="py attribute">
+<dt id="exdpy.http.Snapshot.channel">
+<code class="sig-name descname">channel</code><em class="property">: str</em><a class="headerlink" href="#exdpy.http.Snapshot.channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.http.Snapshot.snapshot">
+<code class="sig-name descname">snapshot</code><em class="property">: str</em><a class="headerlink" href="#exdpy.http.Snapshot.snapshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="exdpy.http.Snapshot.timestamp">
+<code class="sig-name descname">timestamp</code><em class="property">: int</em><a class="headerlink" href="#exdpy.http.Snapshot.timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="exdpy.http.filter">
+<code class="sig-prename descclassname">exdpy.http.</code><code class="sig-name descname">filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">apikey</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">exchange</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">channels</span><span class="p">:</span> <span class="n">List<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">minute</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">formt</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">start</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">end</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">30.0</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.TextLine" title="exdpy.common.TextLine">exdpy.common.TextLine</a><span class="p">]</span><a class="headerlink" href="#exdpy.http.filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a request to Filter HTTP Endpoint.
+See <code class="xref py py-class docutils literal notranslate"><span class="pre">Client</span></code>.:func:<cite>filter</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apikey</strong> – API-key used to connect HTTP Endpoint.</p></li>
+<li><p><strong>timeout</strong> – Optional. Timeout in seconds.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="exdpy.http.snapshot">
+<code class="sig-prename descclassname">exdpy.http.</code><code class="sig-name descname">snapshot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">apikey</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">exchange</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">channels</span><span class="p">:</span> <span class="n">List<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">at</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">formt</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">30.0</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="../../exdpy/exdpy.html#exdpy.http.Snapshot" title="exdpy.http.Snapshot">exdpy.http.Snapshot</a><span class="p">]</span><a class="headerlink" href="#exdpy.http.snapshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a request to Snapshot HTTP Endpoint.
+See <code class="xref py py-class docutils literal notranslate"><span class="pre">Client</span></code>.:func:<cite>snapshot</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apikey</strong> – API-key used to connect HTTP Endpoint.</p></li>
+<li><p><strong>timeout</strong> – Optional. Timeout in seconds.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-exdpy.raw">
+<span id="exdpy-raw-module"></span><h2>exdpy.raw module<a class="headerlink" href="#module-exdpy.raw" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="exdpy.raw.RawRequest">
+<em class="property">class </em><code class="sig-prename descclassname">exdpy.raw.</code><code class="sig-name descname">RawRequest</code><a class="headerlink" href="#exdpy.raw.RawRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Replays market data in raw format.</p>
+<p>You can pick the way to read the response:
+- <a class="reference internal" href="../../exdpy/exdpy.html#exdpy.raw.RawRequest.download" title="exdpy.raw.RawRequest.download"><code class="xref py py-func docutils literal notranslate"><span class="pre">download()</span></code></a> to immidiately start downloading the whole response as one array in the synchronous way.
+- <a class="reference internal" href="../../exdpy/exdpy.html#exdpy.raw.RawRequest.stream" title="exdpy.raw.RawRequest.stream"><code class="xref py py-func docutils literal notranslate"><span class="pre">stream()</span></code></a> to return iterable object yields line by line.</p>
+<dl class="py method">
+<dt id="exdpy.raw.RawRequest.download">
+<code class="sig-name descname">download</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">concurrency</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">20</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.TextLine" title="exdpy.common.TextLine">exdpy.common.TextLine</a><span class="p">]</span><a class="headerlink" href="#exdpy.raw.RawRequest.download" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="exdpy.raw.RawRequest.stream">
+<code class="sig-name descname">stream</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buffer_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">20</span></em><span class="sig-paren">)</span> &#x2192; Iterable<span class="p">[</span><a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.TextLine" title="exdpy.common.TextLine">exdpy.common.TextLine</a><span class="p">]</span><a class="headerlink" href="#exdpy.raw.RawRequest.stream" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="exdpy.raw.raw">
+<code class="sig-prename descclassname">exdpy.raw.</code><code class="sig-name descname">raw</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">apikey</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">filt</span><span class="p">:</span> <span class="n">Mapping<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">start</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">end</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">formt</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">30.0</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="../../exdpy/exdpy.html#exdpy.raw.RawRequest" title="exdpy.raw.RawRequest">exdpy.raw.RawRequest</a><a class="headerlink" href="#exdpy.raw.raw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-exdpy.replay">
+<span id="exdpy-replay-module"></span><h2>exdpy.replay module<a class="headerlink" href="#module-exdpy.replay" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="exdpy.replay.ReplayRequest">
+<em class="property">class </em><code class="sig-prename descclassname">exdpy.replay.</code><code class="sig-name descname">ReplayRequest</code><a class="headerlink" href="#exdpy.replay.ReplayRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="exdpy.replay.ReplayRequest.download">
+<code class="sig-name descname">download</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.MappingLine" title="exdpy.common.MappingLine">exdpy.common.MappingLine</a><span class="p">]</span><a class="headerlink" href="#exdpy.replay.ReplayRequest.download" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send requests and download responses in an array.</p>
+<p>All data will be lost if there was an error while downloading
+any part of the request, including when your API-key quota runs out.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>List of lines</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="exdpy.replay.ReplayRequest.stream">
+<code class="sig-name descname">stream</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buffer_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">20</span></em><span class="sig-paren">)</span> &#x2192; Iterable<span class="p">[</span><a class="reference internal" href="../../exdpy/exdpy.html#exdpy.common.MappingLine" title="exdpy.common.MappingLine">exdpy.common.MappingLine</a><span class="p">]</span><a class="headerlink" href="#exdpy.replay.ReplayRequest.stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send requests to the server and read responses by streaming.</p>
+<p>Returns <code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code> object yields a response line by line.
+Can be iterated by for-in sentence.
+The iterator yields a line immidiately if it is bufferred, but waits for it to be downloaded if not available.</p>
+<p><strong>Please note that buffering won’t start by calling this function,</strong>
+<strong>calling :func:`__iter__` of a returned iterable will.</strong></p>
+<p>Higher responsiveness than <a class="reference internal" href="../../exdpy/exdpy.html#exdpy.replay.ReplayRequest.download" title="exdpy.replay.ReplayRequest.download"><code class="xref py py-func docutils literal notranslate"><span class="pre">download()</span></code></a> is expected as it does not have to wait for
+the entire date to be downloaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>buffer_size</strong> – Optional. Desired buffer size to store streaming data. One shard is equivalent to one minute.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Instance of class implements <code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code> from which iterator that yields response line by line from buffer can be obtained.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="exdpy.replay.replay">
+<code class="sig-prename descclassname">exdpy.replay.</code><code class="sig-name descname">replay</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">apikey</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">filt</span><span class="p">:</span> <span class="n">Mapping<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">start</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">end</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>str<span class="p">, </span>datetime.datetime<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">timeout</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">30.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#exdpy.replay.replay" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-exdpy">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-exdpy" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Exchangedataset
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
