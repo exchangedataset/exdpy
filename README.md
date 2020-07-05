@@ -31,6 +31,15 @@ This will install the latest and available version of this library.
 
 As shown above, its package name in PyPi is [`exchangedataset-python`](https://pypi.org/project/exchangedataset-python/).
 
+## Import
+
+The module is named `exdpy`.
+Please note that it is different from the package name.
+
+```python
+import exdpy
+```
+
 ## Development
 
 This information is for developper of this library.
