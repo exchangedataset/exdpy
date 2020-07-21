@@ -402,7 +402,11 @@ class _RawRequestImpl(RawRequest):
     ):
         self._setting = client_setting
         _check_filter(filt)
-        self._filter = filt
+        # copy filter
+        self._filter = dict()
+        for (exc, chs) in filt.items():
+            self._filter[exc] = list(chs)
+            
         self._start = _convert_any_date_time_to_nanosec(start)
         self._end = _convert_any_date_time_to_nanosec(end)
         if self._start >= self._end:

@@ -181,7 +181,9 @@ def _setup_client_setting(apikey: Text, timeout: float) -> _ClientSetting:
     if not _REGEX_APIKEY.match(apikey):
         raise ValueError('parameter "apikey" must be an valid API-key')
     if not isinstance(timeout, float):
-        raise TypeError('parameter "apikey" must be an float')
+        raise TypeError('parameter "timeout" must be an float')
+    if timeout < 0:
+        raise ValueError('parameter "timeout" must not be negative')
 
     return {
         'apikey': apikey,

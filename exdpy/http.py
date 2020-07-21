@@ -52,12 +52,12 @@ def _download(client_setting: _ClientSetting, path: Text, params: Mapping[Text, 
 
         return {
             'status_code': req.status_code,
-            'content': gzip.decompress(req.content),
+            'body': gzip.decompress(req.content),
         }
 
     return {
         'status_code': req.status_code,
-        'content': req.text,
+        'body': req.text,
     }
 
 def _check_param_exchange(exchange: Text):
@@ -120,10 +120,10 @@ def _filter(
         return list()
 
     # convert into line objects
-    content: str = res['content']
+    body: str = res['body']
 
     # split by line terminator
-    lines = content.splitlines(False)
+    lines = body.splitlines(False)
     # prepare list to store result
     result: List = [None] * len(lines)
     # convert lines
@@ -202,10 +202,10 @@ def _snapshot(
 
     # request to HTTP Endpoint
     res = _download(client_setting, 'snapshot/%s/%d' % (exchange, at_nanosec), params)
-    content: str = res['content']
+    body: str = res['body']
 
     # split by line terminator
-    lines = content.splitlines(False)
+    lines = body.splitlines(False)
     # prepare list to store result
     result: List = [None] * len(lines)
     for i in range(len(lines)):
