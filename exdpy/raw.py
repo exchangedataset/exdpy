@@ -80,47 +80,6 @@ def _convert_snapshots_to_lines(exchange: Text, snapshots: List[Snapshot]) -> Sh
         snapshot.snapshot,
     ), snapshots))
 
-def _runner_download_shard(params: Tuple):
-    op: Text = params[0]
-    if op == 'snapshot':
-        exchange = params[2]
-        return _convert_snapshots_to_lines(exchange, _snapshot(*params[1:]))
-    elif op == 'filter':
-        return _filter(*params[1:])
-    else:
-        raise ValueError('Unknown operation: %s' % op)
-
-def _download_all_shards(client_setting: _ClientSetting, filt: Filter, start: int, end: int, formt: Optional[Text], concurrency: int) -> Mapping[Text, List[List[TextLine]]]:
-    # prepare parameters for multiprocess runners to fetch shards
-    tasks: List[Tuple] = []
-    for (exchange, channels) in filt.items():
-        # take snapshot of channels at the begginging of data
-        tasks.append(('snapshot', client_setting, exchange, channels, start, formt))
-
-        # call Filter HTTP Endpoint to get the rest of data
-        start_minute = _convert_nanosec_to_minute(start)
-        # excluding exact end nanosec
-        end_minute = _convert_nanosec_to_minute(end-1)
-        # minute = [start minute, end minute]
-        for minute in range(start_minute, end_minute+1):
-            tasks.append(('filter', client_setting, exchange, channels, minute, formt, start, end))
-
-    # download them in multiprocess way
-    # this ensures pool will stop all tasks even if any one of them generates error
-    with Pool(processes=concurrency) as pool:
-        # sequence is preserved after mapping, this thread will be blocked until all tasks are done
-        mapped: List[Shard] = pool.map(_runner_download_shard, tasks)
-
-    exc_shards: MutableMapping[Text, List[Shard]] = {}
-    for i in range(len(tasks)):
-        exchange = tasks[i][2]
-        if exchange not in exc_shards:
-            # initialize list for an exchange
-            exc_shards[exchange] = []
-        exc_shards[exchange].append(mapped[i])
-
-    return exc_shards
-
 
 
 _IteratorAndLastLine = TypedDict('_IteratorAndLastLine', {'iterator': Iterator, 'last_line': TextLine})
@@ -392,6 +351,16 @@ class _RawStreamIterable(Iterable[TextLine]):
             self._buffer_size,
         )
 
+def _runner_download_shard(params: Tuple):
+    op: Text = params[0]
+    if op == 'snapshot':
+        exchange = params[2]
+        return _convert_snapshots_to_lines(exchange, _snapshot(*params[1:]))
+    elif op == 'filter':
+        return _filter(*params[1:])
+    else:
+        raise ValueError('Unknown operation: %s' % op)
+
 class _RawRequestImpl(RawRequest):
     def __init__(self,
         client_setting: _ClientSetting,
@@ -418,8 +387,39 @@ class _RawRequestImpl(RawRequest):
                 raise ValueError('Parameter "formt" must be an valid string')
         self._format = formt
 
+    def _download_all_shards(self, concurrency: int) -> Mapping[Text, List[List[TextLine]]]:
+        # prepare parameters for multiprocess runners to fetch shards
+        tasks: List[Tuple] = []
+        for (exchange, channels) in self._filter.items():
+            # take snapshot of channels at the begginging of data
+            tasks.append(('snapshot', self._setting, exchange, channels, self._start, self._format))
+
+            # call Filter HTTP Endpoint to get the rest of data
+            start_minute = _convert_nanosec_to_minute(self._start)
+            # excluding exact end nanosec
+            end_minute = _convert_nanosec_to_minute(self._end-1)
+            # minute = [start minute, end minute]
+            for minute in range(start_minute, end_minute+1):
+                tasks.append(('filter', self._setting, exchange, channels, minute, self._format, self._start, self._end))
+
+        # download them in multiprocess way
+        # this ensures pool will stop all tasks even if any one of them generates error
+        with Pool(processes=concurrency) as pool:
+            # sequence is preserved after mapping, this thread will be blocked until all tasks are done
+            mapped: List[Shard] = pool.map(_runner_download_shard, tasks)
+
+        exc_shards: MutableMapping[Text, List[Shard]] = {}
+        for i in range(len(tasks)):
+            exchange = tasks[i][2]
+            if exchange not in exc_shards:
+                # initialize list for an exchange
+                exc_shards[exchange] = []
+            exc_shards[exchange].append(mapped[i])
+
+        return exc_shards
+
     def download(self, concurrency: int = DOWNLOAD_BATCH_SIZE) -> List[TextLine]:
-        mapped = _download_all_shards(self._setting, self._filter, self._start, self._end, self._format, concurrency)
+        mapped = self._download_all_shards(concurrency)
 
         # prepare shards line iterator for all exchange
         states: MutableMapping[Text, _IteratorAndLastLine] = {}
