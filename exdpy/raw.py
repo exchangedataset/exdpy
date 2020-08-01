@@ -26,9 +26,9 @@ class RawRequest:
     def download(self, concurrency: int = DOWNLOAD_CONCURRENCY) -> List[TextLine]:
         pass
 
-    """Send request to server and read response by streaming.
+    """Send requests to the server and read the response by streaming.
     
-    Returns Iterable object yields response line by line.
+    Returns Iterable object yields line by line.
 
     Iterator has a internal buffer, whose size can be specified by `buffer_size` parameter,
     and will try to fill the buffer by downloading neccesary data.
@@ -48,24 +48,6 @@ class RawRequest:
 
 
 
-class _ShardsLineIterator(Iterator):
-    def __init__(self, shards: List[Shard]):
-        self._shards = shards
-        self._shard_pos = 0
-        self._position = 0
-
-    def __next__(self):
-        while (self._shard_pos < len(self._shards) and len(self._shards[self._shard_pos]) <= self._position):
-            # this shard is all read
-            self._shard_pos += 1
-            self._position = 0
-        if self._shard_pos == len(self._shards):
-            raise StopIteration
-        # return line
-        line = self._shards[self._shard_pos][self._position]
-        self._position += 1
-        return line
-
 def _convert_snapshots_to_lines(exchange: Text, snapshots: List[Snapshot]) -> Shard:
     # exchange: Text
     ## type: LineType
@@ -81,8 +63,6 @@ def _convert_snapshots_to_lines(exchange: Text, snapshots: List[Snapshot]) -> Sh
     ), snapshots))
 
 
-
-_IteratorAndLastLine = TypedDict('_IteratorAndLastLine', {'iterator': Iterator, 'last_line': TextLine})
 
 def _runner_exchange_iterator_download_shard(error_queue: Queue, pipe_send: Connection, op: Text, params: Tuple):
     try:
@@ -116,8 +96,6 @@ class _ExchangeStreamShardIterator(Iterator[Shard]):
         self._start = start
         self._end = end
         self._format = formt
-        # buffer
-        self._buffer: List[Optional[Shard]] = []
         self._next_download_minute = start_minute = _convert_nanosec_to_minute(start)
         # end is exclusive
         self._end_minute = end_minute = _convert_nanosec_to_minute(end - 1)
@@ -351,6 +329,26 @@ class _RawStreamIterable(Iterable[TextLine]):
             self._buffer_size,
         )
 
+class _ShardsLineIterator(Iterator):
+    def __init__(self, shards: List[Shard]):
+        self._shards = shards
+        self._shard_pos = 0
+        self._position = 0
+
+    def __next__(self):
+        while (self._shard_pos < len(self._shards) and len(self._shards[self._shard_pos]) <= self._position):
+            # this shard is all read
+            self._shard_pos += 1
+            self._position = 0
+        if self._shard_pos == len(self._shards):
+            raise StopIteration
+        # return line
+        line = self._shards[self._shard_pos][self._position]
+        self._position += 1
+        return line
+
+_IteratorAndLastLine = TypedDict('_IteratorAndLastLine', {'iterator': Iterator, 'last_line': TextLine})
+
 def _runner_download_shard(params: Tuple):
     op: Text = params[0]
     if op == 'snapshot':
@@ -437,10 +435,11 @@ class _RawRequestImpl(RawRequest):
                 # data for this exchange is empty, ignore
                 pass
 
-        # it needs to process lines so that it becomes a single array
-        array: List[TextLine] = []
+        # process shards into single list
+        result: List[TextLine] = []
         while len(exchanges) > 0:
-            # have to set initial value to calculate minimum value
+            # Find the line that have the earliest timestamp
+            # have to set the initial value to calculate the minimum value
             argmin = 0
             mi = states[exchanges[argmin]]['last_line'].timestamp
             for i in range(1, len(exchanges)):
@@ -452,7 +451,7 @@ class _RawRequestImpl(RawRequest):
 
             state = states[exchanges[argmin]]
             # append the line
-            array.append(state['last_line'])
+            result.append(state['last_line'])
             # find the next line for this exchange, if does not exist, remove the exchange
             try:
                 nxt = next(state['iterator'])
@@ -461,7 +460,7 @@ class _RawRequestImpl(RawRequest):
                 # next line is absent
                 exchanges.remove(exchange)
         
-        return array
+        return result
 
     def stream(self, buffer_size: int = DEFAULT_BUFFER_SIZE) -> Iterable[TextLine]:
         return _RawStreamIterable(

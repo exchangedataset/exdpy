@@ -40,11 +40,12 @@ class ReplayRequest:
 ReplayMessageDefinition = Mapping[Text, Text]
 
 class _RawLineProcessor:
-    def __init__(self):
+    def __init__(self, filt: Mapping[Text, List[Text]]):
         self._defs: MutableMapping[Text, MutableMapping[Text, ReplayMessageDefinition]] = {}
+        self._post_filter = dict([(exchange, set(channels)) for exchange, channels in filt.items()])
 
     def process_raw_line(self, line: TextLine) -> Optional[MappingLine]:
-        # convert if it is needed to
+        # convert only if needed to
         if line.type == LineType.START:
             # reset definition
             self._defs[line.exchange] = {}
@@ -58,27 +59,31 @@ class _RawLineProcessor:
 
         if exchange not in self._defs:
             # this is the first line for this exchange
-            self._defs[exchange] = {
-                channel: json.loads(message)
-            }
-            return None
+            self._defs[exchange] = {}
         if channel not in self._defs[exchange]:
             self._defs[exchange][channel] = json.loads(message)
             return None
 
-        result = json.loads(message)
-        defn: Mapping[Text, Any] = self._defs[exchange][channel]
-        for name, typ in defn.items():
-            if (typ == 'timestamp' or typ == 'duration') and result[name] is not None:
-                # convert timestamp type parameter into int
-                result[name] = int(result[name], base=10)
+        msgObj = json.loads(message)
 
+        # channel name change and post filtering
         new_channel = channel
         if exchange == 'bitmex':
-            if channel == 'orderBookL2':
-                new_channel = 'orderBookL2_%s' % result['pair']
-            elif channel == 'trade':
-                new_channel = 'trade_%s' % result['pair']
+            if channel.find('_') == -1:
+                # no underscore in the channel name
+                new_channel = '%s_%s' % (channel, msgObj['pair'])
+            # An underscore in the channel name is an unexpected case
+
+        if new_channel not in self._post_filter[exchange]:
+            # this channel should be excluded
+            return None
+
+        # type conversion according to the received definition
+        defn: Mapping[Text, Any] = self._defs[exchange][channel]
+        for name, typ in defn.items():
+            if (typ == 'timestamp' or typ == 'duration') and msgObj[name] is not None:
+                # convert timestamp type parameter into int
+                msgObj[name] = int(msgObj[name], base=10)
 
         # exchange: Text
         ## type: LineType
@@ -90,7 +95,7 @@ class _RawLineProcessor:
             line.type,
             line.timestamp,
             new_channel,
-            result,
+            msgObj,
         )
 
 class _ReplayStreamIterator(Iterator[MappingLine]):
@@ -110,8 +115,7 @@ class _ReplayStreamIterator(Iterator[MappingLine]):
             'json',
         )
         self._raw_itr: Iterator[TextLine] = iter(req.stream(buffer_size))
-        self._post_filter: Mapping[Text, Set[Text]] = dict([(exchange, set(channels)) for exchange, channels in filt.items()])
-        self._processor = _RawLineProcessor()
+        self._processor = _RawLineProcessor(filt)
 
     def __next__(self):
         while True:
@@ -123,8 +127,6 @@ class _ReplayStreamIterator(Iterator[MappingLine]):
             processed = self._processor.process_raw_line(line)
             if processed is None:
                 continue
-            if processed.channel in self._post_filter[processed.exchange]:
-                return processed
 
 class _ReplayStreamIterable(Iterable[MappingLine]):
     def __init__(self,
@@ -184,18 +186,13 @@ class _ReplayRequestImpl(ReplayRequest):
             self._end,
             'json',
         )
-
-        post_filter: Mapping[Text, Set[Text]] = dict([(exchange, set(channels)) for exchange, channels in self._filter.items()])
-
         array = req.download()
         result: List[MappingLine] = []
-        processor = _RawLineProcessor()
+        processor = _RawLineProcessor(self._filter)
 
         for i in range(len(array)):
             processed = processor.process_raw_line(array[i])
             if processed is None:
-                continue
-            if processed.channel not in post_filter[processed.exchange]:
                 continue
             result.append(processed)
             
