@@ -4,7 +4,7 @@ from multiprocessing.connection import Connection
 from queue import Empty as QueueEmptyError
 from collections import deque
 
-from .constants import DEFAULT_BUFFER_SIZE, DOWNLOAD_BATCH_SIZE, CLIENT_DEFAULT_TIMEOUT
+from .constants import DEFAULT_BUFFER_SIZE, DOWNLOAD_CONCURRENCY, CLIENT_DEFAULT_TIMEOUT
 from .common import Shard, TextLine, Filter, AnyDateTime, APIKey, LineType, _REGEX_NAME, _check_filter, _convert_any_date_time_to_nanosec, _convert_any_minute_to_minute, _ClientSetting, _setup_client_setting, _convert_nanosec_to_minute
 from .http import _filter, _snapshot, Snapshot
 
@@ -23,7 +23,7 @@ class RawRequest:
     :param concurrency: Number of concurrency to download data from HTTP Endpoints
     :returns: List of lines
     """
-    def download(self, concurrency: int = DOWNLOAD_BATCH_SIZE) -> List[TextLine]:
+    def download(self, concurrency: int = DOWNLOAD_CONCURRENCY) -> List[TextLine]:
         pass
 
     """Send request to server and read response by streaming.
@@ -418,7 +418,7 @@ class _RawRequestImpl(RawRequest):
 
         return exc_shards
 
-    def download(self, concurrency: int = DOWNLOAD_BATCH_SIZE) -> List[TextLine]:
+    def download(self, concurrency: int = DOWNLOAD_CONCURRENCY) -> List[TextLine]:
         mapped = self._download_all_shards(concurrency)
 
         # prepare shards line iterator for all exchange
