@@ -24,9 +24,9 @@ class Client:
         """Low-level http call module"""
         return self._http
 
-    def raw(self, filt: Filter, start: AnyDateTime, end: AnyDateTime, formt: Optional[Text] = None) -> RawRequest:
+    def raw(self, filt: Filter, start: AnyDateTime, end: AnyDateTime, postFilter: Optional[Filter] = None, formt: Optional[Text] = None) -> RawRequest:
         """Lower-level API that processes data from Exchangedataset HTTP-API and generate raw (close to exchanges' format) data."""
-        return _RawRequestImpl(self._setting, filt, start, end, formt)
+        return _RawRequestImpl(self._setting, filt, start, end, postFilter, formt)
 
     def replay(self, filt: Filter, start: AnyDateTime, end: AnyDateTime) -> ReplayRequest:
         """Returns builder to create :class:`ReplayRequest` that replays market data."""

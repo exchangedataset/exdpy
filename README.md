@@ -55,7 +55,7 @@ It is a package managing and virtual environment utility.
 To fetch all dependencies (including development dependencies), run the command below:
 
 ```shell
-pipenv install
+pipenv install --dev
 ```
 
 This will install all dependencies needed to run, and compile `exchangedataset-python`.
@@ -67,7 +67,7 @@ Unit test files are under tests/ directory.
 All tests can be conducted by running the command below:
 
 ```shell
-pipenv pytest
+pipenv run pytest
 ```
 
 ### Documentation Generation

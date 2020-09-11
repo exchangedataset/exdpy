@@ -156,17 +156,17 @@ Shard = List[TextLine]
 
 Filter = Mapping[Text, List[Text]]
 
-def _check_filter(filter: Filter):
+def _check_filter(filter: Filter, argname: Text):
     for (exchange, channels) in filter.items():
         if not isinstance(exchange, str):
-            raise TypeError('Name of exchange must be an string')
+            raise TypeError('%s: Name of exchange must be an string', argname)
         if not _REGEX_NAME.match(exchange):
-            raise ValueError('Name of exchange must be an valid string: %s' % exchange)
+            raise ValueError('%s: Name of exchange must be an valid string: %s' % (argname, exchange))
         for ch in channels:
             if not isinstance(ch, str):
-                raise TypeError('Name of channel must be an string')
+                raise TypeError('%s: Name of channel must be an string' % argname)
             if not _REGEX_NAME.match(ch):
-                raise ValueError('Name of channel must be an valid string: %s' % ch)
+                raise ValueError('%s: Name of channel must be an valid string: %s' % (argname, ch))
 
 class _ClientSetting(TypedDict):
     """Settings for :class:`Client`"""

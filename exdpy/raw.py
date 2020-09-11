@@ -88,6 +88,7 @@ class _ExchangeStreamShardIterator(Iterator[Shard]):
         start: int,
         end: int,
         formt: Optional[Text],
+        postFilter: Optional[List[Text]],
         buffer_size: int,
     ):
         self._setting = client_setting
@@ -96,6 +97,7 @@ class _ExchangeStreamShardIterator(Iterator[Shard]):
         self._start = start
         self._end = end
         self._format = formt
+        self._postFilter = postFilter
         self._next_download_minute = start_minute = _convert_nanosec_to_minute(start)
         # end is exclusive
         self._end_minute = end_minute = _convert_nanosec_to_minute(end - 1)
@@ -122,6 +124,7 @@ class _ExchangeStreamShardIterator(Iterator[Shard]):
                 self._channels,
                 self._start,
                 self._format,
+                self._postFilter,
             )
         ))
         # start new process
@@ -143,6 +146,7 @@ class _ExchangeStreamShardIterator(Iterator[Shard]):
                 self._format,
                 self._start,
                 self._end,
+                self._postFilter,
             )
         ))
         proc.start()
@@ -198,6 +202,7 @@ class _ExchangeStreamIterator(Iterator[TextLine]):
         start: int,
         end: int,
         formt: Optional[Text],
+        postFilter: Optional[List[Text]],
         buffer_size: int,
     ):
         self._setting = client_setting
@@ -215,6 +220,7 @@ class _ExchangeStreamIterator(Iterator[TextLine]):
             start,
             end,
             formt,
+            postFilter,
             buffer_size,
         )
         self._shard: Optional[Shard] = None
@@ -248,6 +254,7 @@ class _RawStreamIterator(Iterator[TextLine]):
         start: int,
         end: int,
         formt: Optional[Text],
+        postFilter: Optional[Filter],
         buffer_size: int,
     ):
         self._setting = client_setting
@@ -255,6 +262,9 @@ class _RawStreamIterator(Iterator[TextLine]):
         states: MutableMapping[Text, _IteratorAndLastLine] = {}
         exchanges: List[Text] = []
         for (exchange, channels) in filt.items():
+            postExcFilter = None
+            if postFilter is not None:
+                postExcFilter = postFilter[exchange]
             iterator = _ExchangeStreamIterator(
                 client_setting,
                 exchange,
@@ -262,6 +272,7 @@ class _RawStreamIterator(Iterator[TextLine]):
                 start,
                 end,
                 formt,
+                postExcFilter,
                 buffer_size,
             )
             try:
@@ -310,6 +321,7 @@ class _RawStreamIterable(Iterable[TextLine]):
         start: int,
         end: int,
         formt: Optional[Text],
+        postFilter: Optional[Filter],
         buffer_size: int,
     ):
         self._setting = client_setting
@@ -317,6 +329,7 @@ class _RawStreamIterable(Iterable[TextLine]):
         self._start = start
         self._end = end
         self._format = formt
+        self._postFilter = postFilter
         self._buffer_size = buffer_size
 
     def __iter__(self) -> Iterator[TextLine]:
@@ -326,6 +339,7 @@ class _RawStreamIterable(Iterable[TextLine]):
             self._start,
             self._end,
             self._format,
+            self._postFilter,
             self._buffer_size,
         )
 
@@ -365,19 +379,27 @@ class _RawRequestImpl(RawRequest):
         filt: Filter,
         start: AnyDateTime,
         end: AnyDateTime,
+        postFilter: Optional[Filter],
         formt: Optional[Text]
     ):
         self._setting = client_setting
-        _check_filter(filt)
+        _check_filter(filt, "filt")
         # copy filter
         self._filter = dict()
         for (exc, chs) in filt.items():
-            self._filter[exc] = list(chs)
-            
+            self._filter[exc] = chs.copy()
+        
         self._start = _convert_any_date_time_to_nanosec(start)
         self._end = _convert_any_date_time_to_nanosec(end)
         if self._start >= self._end:
             raise ValueError('Parameter "start" cannot be equal or bigger than "end"')
+        if postFilter is not None:
+            _check_filter(postFilter, "postFilter")
+            self._postFilter: Optional[Mapping[Text, List[Text]]] = dict()
+            for (exc, chs) in postFilter.items():
+                self._postFilter[exc] = chs.copy()
+        else:
+            self._postFilter = None
         if formt is not None:
             if not isinstance(formt, str):
                 raise TypeError('Parameter "formt" must be a string')
@@ -389,8 +411,11 @@ class _RawRequestImpl(RawRequest):
         # prepare parameters for multiprocess runners to fetch shards
         tasks: List[Tuple] = []
         for (exchange, channels) in self._filter.items():
+            postExcFilter = None
+            if self._postFilter is not None:
+                postExcFilter = self._postFilter[exchange]
             # take snapshot of channels at the begginging of data
-            tasks.append(('snapshot', self._setting, exchange, channels, self._start, self._format))
+            tasks.append(('snapshot', self._setting, exchange, channels, self._start, self._format, postExcFilter))
 
             # call Filter HTTP Endpoint to get the rest of data
             start_minute = _convert_nanosec_to_minute(self._start)
@@ -398,7 +423,7 @@ class _RawRequestImpl(RawRequest):
             end_minute = _convert_nanosec_to_minute(self._end-1)
             # minute = [start minute, end minute]
             for minute in range(start_minute, end_minute+1):
-                tasks.append(('filter', self._setting, exchange, channels, minute, self._format, self._start, self._end))
+                tasks.append(('filter', self._setting, exchange, channels, minute, self._format, self._start, self._end, postExcFilter))
 
         # download them in multiprocess way
         # this ensures pool will stop all tasks even if any one of them generates error
@@ -469,6 +494,7 @@ class _RawRequestImpl(RawRequest):
             self._start,
             self._end,
             self._format,
+            self._postFilter,
             buffer_size
         )
 
@@ -477,6 +503,7 @@ def raw(
     filt: Filter,
     start: AnyDateTime,
     end: AnyDateTime,
+    postFilter: Filter,
     formt: Optional[Text] = None,
     timeout: float = CLIENT_DEFAULT_TIMEOUT,
 ) -> RawRequest:
@@ -485,5 +512,6 @@ def raw(
         filt,
         start,
         end,
+        postFilter,
         formt
     )

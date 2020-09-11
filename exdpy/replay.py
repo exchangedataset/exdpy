@@ -40,9 +40,8 @@ class ReplayRequest:
 ReplayMessageDefinition = Mapping[Text, Text]
 
 class _RawLineProcessor:
-    def __init__(self, filt: Mapping[Text, List[Text]]):
+    def __init__(self):
         self._defs: MutableMapping[Text, MutableMapping[Text, ReplayMessageDefinition]] = {}
-        self._post_filter = dict([(exchange, set(channels)) for exchange, channels in filt.items()])
 
     def process_raw_line(self, line: TextLine) -> Optional[MappingLine]:
         # convert only if needed to
@@ -66,18 +65,6 @@ class _RawLineProcessor:
 
         msgObj = json.loads(message)
 
-        # channel name change and post filtering
-        new_channel = channel
-        if exchange == 'bitmex':
-            if channel.find('_') == -1:
-                # no underscore in the channel name
-                new_channel = '%s_%s' % (channel, msgObj['pair'])
-            # An underscore in the channel name is an unexpected case
-
-        if new_channel not in self._post_filter[exchange]:
-            # this channel should be excluded
-            return None
-
         # type conversion according to the received definition
         defn: Mapping[Text, Any] = self._defs[exchange][channel]
         for name, typ in defn.items():
@@ -94,7 +81,7 @@ class _RawLineProcessor:
             exchange,
             line.type,
             line.timestamp,
-            new_channel,
+            line.channel,
             msgObj,
         )
 
@@ -112,10 +99,11 @@ class _ReplayStreamIterator(Iterator[MappingLine]):
             _convert_replay_filter_to_raw_filter(filt),
             start,
             end,
+            _convert_replay_filter_to_raw_post_filter(filt),
             'json',
         )
         self._raw_itr: Iterator[TextLine] = iter(req.stream(buffer_size))
-        self._processor = _RawLineProcessor(filt)
+        self._processor = _RawLineProcessor()
 
     def __next__(self):
         while True:
@@ -127,6 +115,7 @@ class _ReplayStreamIterator(Iterator[MappingLine]):
             processed = self._processor.process_raw_line(line)
             if processed is None:
                 continue
+            return processed
 
 class _ReplayStreamIterable(Iterable[MappingLine]):
     def __init__(self,
@@ -152,16 +141,32 @@ def _convert_replay_filter_to_raw_filter(filt: Filter):
         if exchange == 'bitmex':
             st: Set[Text] = set()
             for ch in channels:
-                if ch.startswith('orderBookL2'):
-                    st.add('orderBookL2')
-                elif ch.startswith('trade'):
-                    st.add('trade')
+                ui = ch.find('_')
+                if ui != -1:
+                    st.add(ch[:ui])
                 else:
                     st.add(ch)
             new[exchange] = list(st)
         else:
-            new[exchange] = channels
+            new[exchange] = channels.copy()
     return new
+
+def _convert_replay_filter_to_raw_post_filter(filt: Filter):
+    """Converts a replay filter to a raw postFilter"""
+    new: MutableMapping[Text, List[Text]] = {}
+    for exchange, channels in filt.items():
+        if exchange == 'bitmex':
+            st: Set[Text] = set()
+            for ch in channels:
+                st.add(ch)
+                ui = ch.find('_')
+                if ui != -1:
+                    st.add(ch[:ui])
+            new[exchange] = list(st)
+        else:
+            new[exchange] = channels.copy()
+    return new
+
 
 class _ReplayRequestImpl(ReplayRequest):
     def __init__(self,
@@ -171,7 +176,7 @@ class _ReplayRequestImpl(ReplayRequest):
         end: AnyDateTime,
     ):
         self._setting = client_setting
-        _check_filter(filt)
+        _check_filter(filt, 'filt')
         self._filter = filt
         self._start = _convert_any_date_time_to_nanosec(start)
         self._end = _convert_any_date_time_to_nanosec(end)
@@ -184,11 +189,12 @@ class _ReplayRequestImpl(ReplayRequest):
             _convert_replay_filter_to_raw_filter(self._filter),
             self._start,
             self._end,
+            _convert_replay_filter_to_raw_post_filter(self._filter),
             'json',
         )
         array = req.download()
         result: List[MappingLine] = []
-        processor = _RawLineProcessor(self._filter)
+        processor = _RawLineProcessor()
 
         for i in range(len(array)):
             processed = processor.process_raw_line(array[i])
