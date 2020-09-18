@@ -73,13 +73,6 @@ def _check_param_channels(channels: List[Text]):
         if not _REGEX_NAME.match(ch):
             raise ValueError('Parameter "channels" must be an valid string: "%s"' % ch)
 
-def _check_param_post_filter(postFilter: List[Text]):
-    if not isinstance(postFilter, list):
-        raise TypeError('Parameter "postFilter" must be an list')
-    for ch in postFilter:
-        if not _REGEX_NAME.match(ch):
-            raise ValueError('Parameter "postFilter" must be an valid string: "%s"' % ch)
-
 def _filter(
     client_setting: _ClientSetting,
     exchange: Text,
@@ -88,7 +81,6 @@ def _filter(
     formt: Optional[Text],
     start: Optional[AnyDateTime],
     end: Optional[AnyDateTime],
-    postFilter: Optional[List[Text]],
 ) -> Shard:
     """Internal function to call Filter HTTP Endpoint."""
     # check parameters
@@ -113,9 +105,6 @@ def _filter(
         # check if start < end
         if query['start'] >= query['end']:
             raise ValueError('"start" cannot be equal to or bigger than "end"')
-    if postFilter is not None:
-        _check_param_post_filter(postFilter)
-        query['postFilter'] = postFilter
     if formt is not None:
         if not isinstance(formt, str):
             raise TypeError('Parameter "format" must be a string')
@@ -195,7 +184,6 @@ def _snapshot(
     channels: List[Text],
     at: AnyDateTime,
     formt: Optional[Text],
-    postFilter: Optional[List[Text]]
 ) -> List[Snapshot]:
     """Internal function to call Snapshot HTTP Endpoint."""
     # check parameter type and value
@@ -208,8 +196,6 @@ def _snapshot(
     }
     if formt is not None:
         params['format'] = formt
-    if postFilter is not None:
-        params['postFilter'] = postFilter
 
     # convert 'at' parameter into nanosec
     at_nanosec = _convert_any_date_time_to_nanosec(at)
@@ -243,7 +229,6 @@ class HTTPModule:
         formt: Optional[Text] = None,
         start: Optional[AnyDateTime] = None,
         end: Optional[AnyDateTime] = None,
-        postFilter: Optional[List[Text]] = None,
     ) -> Shard:
         """Sends a request to Filter HTTP Endpoint with given parameter synchronously.
 
@@ -256,14 +241,13 @@ class HTTPModule:
         :returns: List of lines as an response.
         """
 
-        return _filter(self._client_setting, exchange, channels, minute, formt, start, end, postFilter)
+        return _filter(self._client_setting, exchange, channels, minute, formt, start, end)
 
     def snapshot(self,
         exchange: Text,
         channels: List[Text],
         at: AnyDateTime,
         formt: Optional[Text] = None,
-        postFilter: Optional[List[Text]] = None,
     ) -> List[Snapshot]:
         """Sends a request to Snapshot HTTP Endpoint with given parameter synchronously.
         
@@ -273,7 +257,7 @@ class HTTPModule:
         :param formt: Format to get result in
         :returns: List of snapshots
         """
-        return _snapshot(self._client_setting, exchange, channels, at, formt, postFilter)
+        return _snapshot(self._client_setting, exchange, channels, at, formt)
 
 def filter(
     apikey: APIKey,
@@ -283,7 +267,6 @@ def filter(
     formt: Optional[Text] = None,
     start: Optional[AnyDateTime] = None,
     end: Optional[AnyDateTime] = None,
-    postFilter: Optional[List[Text]] = None,
     timeout: float = CLIENT_DEFAULT_TIMEOUT,
 ) -> Shard:
     """Sends a request to Filter HTTP Endpoint.
@@ -300,7 +283,6 @@ def filter(
         formt,
         start,
         end,
-        postFilter,
     )
 
 def snapshot(
@@ -309,7 +291,6 @@ def snapshot(
     channels: List[Text],
     at: AnyDateTime,
     formt: Optional[Text] = None,
-    postFilter: Optional[List[Text]] = None,
     timeout: float = CLIENT_DEFAULT_TIMEOUT,
 ) -> List[Snapshot]:
     """Sends a request to Snapshot HTTP Endpoint.
@@ -324,5 +305,4 @@ def snapshot(
         channels,
         at,
         formt,
-        postFilter,
     )

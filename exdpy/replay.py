@@ -96,10 +96,9 @@ class _ReplayStreamIterator(Iterator[MappingLine]):
         self._setting = client_setting
         req = _RawRequestImpl(
             client_setting,
-            _convert_replay_filter_to_raw_filter(filt),
+            filt,
             start,
             end,
-            _convert_replay_filter_to_raw_post_filter(filt),
             'json',
         )
         self._raw_itr: Iterator[TextLine] = iter(req.stream(buffer_size))
@@ -134,39 +133,6 @@ class _ReplayStreamIterable(Iterable[MappingLine]):
     def __iter__(self):
         return _ReplayStreamIterator(self._setting, self._filter, self._start, self._end, self._buffer_size)
 
-def _convert_replay_filter_to_raw_filter(filt: Filter):
-    """Converts filter parameter of replay to that of raw"""
-    new: MutableMapping[Text, List[Text]] = {}
-    for exchange, channels in filt.items():
-        if exchange == 'bitmex':
-            st: Set[Text] = set()
-            for ch in channels:
-                ui = ch.find('_')
-                if ui != -1:
-                    st.add(ch[:ui])
-                else:
-                    st.add(ch)
-            new[exchange] = list(st)
-        else:
-            new[exchange] = channels.copy()
-    return new
-
-def _convert_replay_filter_to_raw_post_filter(filt: Filter):
-    """Converts a replay filter to a raw postFilter"""
-    new: MutableMapping[Text, List[Text]] = {}
-    for exchange, channels in filt.items():
-        if exchange == 'bitmex':
-            st: Set[Text] = set()
-            for ch in channels:
-                st.add(ch)
-                ui = ch.find('_')
-                if ui != -1:
-                    st.add(ch[:ui])
-            new[exchange] = list(st)
-        else:
-            new[exchange] = channels.copy()
-    return new
-
 
 class _ReplayRequestImpl(ReplayRequest):
     def __init__(self,
@@ -186,10 +152,9 @@ class _ReplayRequestImpl(ReplayRequest):
     def download(self) -> List[MappingLine]:
         req = _RawRequestImpl(
             self._setting,
-            _convert_replay_filter_to_raw_filter(self._filter),
+            self._filter,
             self._start,
             self._end,
-            _convert_replay_filter_to_raw_post_filter(self._filter),
             'json',
         )
         array = req.download()
